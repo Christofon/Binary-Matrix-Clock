@@ -87,12 +87,14 @@ bool changedvalues = false;
 String iStartTime = " ";
 int redVal_back, greenVal_back, blueVal_back;
 int redVal_time, greenVal_time, blueVal_time;
+int redVal_header, greenVal_header, blueVal_header;
 int intensity, intensity_day, intensity_night;
 int usenightmode, day_time_start, day_time_stop, statusNightMode;
 int statusLabelID, statusNightModeID, statusLanguageID, intensity_web_HintID, DayNightSectionID, LEDsettingsSectionID;
 int sliderBrightnessDayID, switchNightModeID, sliderBrightnessNightID, call_day_time_startID, call_day_time_stopID;
 uint16_t text_colour_background;
 uint16_t text_colour_time;
+uint16_t text_colour_header;
 bool WiFIsetup = false;
 
 
@@ -160,6 +162,12 @@ void setupWebInterface() {
   sprintf(hex_time, "#%02X%02X%02X", redVal_time, greenVal_time, blueVal_time);
   text_colour_time = ESPUI.text("Time", colCallTIME, ControlColor::Dark, hex_time);
   ESPUI.setInputType(text_colour_time, "color");
+
+  // Header color selector:
+  char hex_header[7] = { 0 };
+  sprintf(hex_header, "#%02X%02X%02X", redVal_header, greenVal_header, blueVal_header);
+  text_colour_header = ESPUI.text("Header", colCallHEADER, ControlColor::Dark, hex_header);
+  ESPUI.setInputType(text_colour_header, "color");
 
   // Background color selector:
   char hex_back[7] = { 0 };
@@ -291,6 +299,9 @@ void getFlashValues() {
   redVal_time = preferences.getUInt("redVal_time", redVal_time_default);
   greenVal_time = preferences.getUInt("greenVal_time", greenVal_time_default);
   blueVal_time = preferences.getUInt("blueVal_time", blueVal_time_default);
+  redVal_header = preferences.getUInt("redVal_header", redVal_header_default);
+  greenVal_header = preferences.getUInt("greenVal_header", greenVal_header_default);
+  blueVal_header = preferences.getUInt("blueVal_header", blueVal_header_default);
   redVal_back = preferences.getUInt("redVal_back", redVal_back_default);
   greenVal_back = preferences.getUInt("greenVal_back", greenVal_back_default);
   blueVal_back = preferences.getUInt("blueVal_back", blueVal_back_default);
@@ -312,6 +323,9 @@ void setFlashValues() {
   preferences.putUInt("redVal_time", redVal_time);
   preferences.putUInt("greenVal_time", greenVal_time);
   preferences.putUInt("blueVal_time", blueVal_time);
+  preferences.putUInt("redVal_header", redVal_header);
+  preferences.putUInt("greenVal_header", greenVal_header);
+  preferences.putUInt("blueVal_header", blueVal_header);
   preferences.putUInt("redVal_back", redVal_back);
   preferences.putUInt("greenVal_back", greenVal_back);
   preferences.putUInt("blueVal_back", blueVal_back);
@@ -358,6 +372,9 @@ void buttonClockReset(Control* sender, int type, void* param) {
         preferences.putUInt("redVal_time", redVal_time_default);
         preferences.putUInt("greenVal_time", greenVal_time_default);
         preferences.putUInt("blueVal_time", blueVal_time_default);
+        preferences.putUInt("redVal_header", redVal_header_default);
+        preferences.putUInt("greenVal_header", greenVal_header_default);
+        preferences.putUInt("blueVal_header", blueVal_header_default);
         preferences.putUInt("redVal_back", redVal_back_default);
         preferences.putUInt("greenVal_back", greenVal_back_default);
         preferences.putUInt("blueVal_back", blueVal_back_default);
@@ -515,6 +532,7 @@ void update_display() {
 // # Display hours and minutes text function:
 // ###########################################################################################################################################
 uint32_t colorRGB;
+uint32_t colorRGBHeader;
 static int lastHourSet = -1;
 static int lastMinutesSet = -1;
 static int lastSecondsSet = -1;
@@ -567,6 +585,7 @@ void show_time(int hours, int minutes, int seconds) {
 
   // Set the time text color:
   colorRGB = strip.Color(redVal_time, greenVal_time, blueVal_time);
+  colorRGBHeader = strip.Color(redVal_header, greenVal_header, blueVal_header);
 
   // Display time:
   iHour = hours;
@@ -584,8 +603,8 @@ void show_time(int hours, int minutes, int seconds) {
   // ########################################################### GENERAL 1st LINE
 
   // 1st line (32,16,8,4,2,1):
-  setLEDcol(18, 29, colorRGB);
-  setLEDcol(34, 45, colorRGB);  // 2nd row
+  setLEDcol(18, 29, colorRGBHeader);
+  setLEDcol(34, 45, colorRGBHeader);  // 2nd row
 
   // ########################################################### HOURS: (1-23)
 
@@ -685,9 +704,6 @@ void show_time(int hours, int minutes, int seconds) {
 
   strip.show();
 }
-
-
-
 
 
 // ###########################################################################################################################################
@@ -833,6 +849,26 @@ void getRGBTIME(String hexvalue) {
 
 
 // ###########################################################################################################################################
+// # GUI: Convert hex color value to RGB int values - HEADER:
+// ###########################################################################################################################################
+void getRGBHEADER(String hexvalue) {
+  updatedevice = false;
+  delay(1000);
+  hexvalue.toUpperCase();
+  char c[7];
+  hexvalue.toCharArray(c, 8);
+  int red = hexcolorToInt(c[1], c[2]);
+  int green = hexcolorToInt(c[3], c[4]);
+  int blue = hexcolorToInt(c[5], c[6]);
+  redVal_header = red;
+  greenVal_header = green;
+  blueVal_header = blue;
+  changedvalues = true;
+  updatedevice = true;
+}
+
+
+// ###########################################################################################################################################
 // # GUI: Convert hex color value to RGB int values - BACKGROUND:
 // ###########################################################################################################################################
 void getRGBBACK(String hexvalue) {
@@ -870,6 +906,14 @@ int hexcolorToInt(char upper, char lower) {
 // ###########################################################################################################################################
 void colCallTIME(Control* sender, int type) {
   getRGBTIME(sender->value);
+}
+
+
+// ###########################################################################################################################################
+// # GUI: Color change for header color:
+// ###########################################################################################################################################
+void colCallHEADER(Control* sender, int type) {
+  getRGBHEADER(sender->value);
 }
 
 
